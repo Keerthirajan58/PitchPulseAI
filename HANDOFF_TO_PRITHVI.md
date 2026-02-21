@@ -1,81 +1,210 @@
-# 🏟️ HANDOFF: Keerthi → Prithvi (UI & AI Layer Sync)
+# 🏟️ HANDOFF: Keerthi → Prithvi (Complete AI Integration Guide)
 
 **Date:** Feb 21, 2026  
 **From:** Keerthi (AI Layer)  
-**To:** Prithvi (Flutter UI)  
-**Status:** ✅ AI Models Ready | ⏳ Pending Flutter UI Adjustments
+**To:** Prithvi (Flutter App)  
+**Status:** ✅ All 6 AI Modules Tested & Live on GitHub
 
 ---
 
-Hey Prithvi! Thanks for the update on the app side. We reviewed your progress and noticed a few critical UI structural pieces missing—specifically around the high-wow AI features. 
-
-The good news is **your JSON data models fit the AI output perfectly**. You do *not* need to change your Pydantic/JSON models. However, we need you to adjust the App Architecture to properly showcase the AI capabilities for the 2-minute demo.
-
-Here is the exact UI mapping and action plan you need to follow:
+Hey Prithvi! I reviewed your handoff — great work on the premium UI overhaul. Here's exactly how every AI feature maps to your Flutter screens, what JSON your app should send and receive, and what's already done vs. what you need to wire up.
 
 ---
 
-## 1. App Navigation & Structure Updates
+## 1. What's Already Built (Your 3 LLM Touchpoints — All Handled)
 
-### The Bottom Navigation Bar (4 Tabs)
-Update your Bottom Nav to contain exactly these 4 tabs:
-1. **Home**
-2. **Check-In** *(Missing from your repo, critical for the demo)*
-3. **Reports**
-4. **Settings**
+### ✅ Touchpoint 1: Suggested XI Engine → `suggested_xi.py`
+**Your file:** `suggested_xi_screen.dart`
 
----
+**Endpoint (Roshini wires this):** `POST /api/v1/ai/suggested-xi`
 
-## 2. Screen-by-Screen Design Requirements
+**What your app sends:**
+```json
+{
+  "opponent": "Bayern Munich",
+  "match_context": "Away, Champions League Semi-Final",
+  "available_squad": [
+    {"id": "p1", "name": "Vinícius Jr", "position": "FW", "readiness": 95, "form": "Excellent"},
+    {"id": "p2", "name": "Bellingham", "position": "MID", "readiness": 88, "form": "Good"}
+  ]
+}
+```
 
-### Tab 1: Home (The Dashboard)
-*Priority Change: Readiness is more actionable than Risk. The UI hierarchy must reflect this.*
+**What your app receives (EXACT match to your expected schema):**
+```json
+{
+  "best_formation": "4-3-3",
+  "tactical_analysis": "4-3-3 selected to stretch Bayern's high line...",
+  "starting_xi_ids": ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11"],
+  "bench_ids": ["p12", "p13", "p14", "p15"],
+  "player_rationales": {
+    "p1": "Vini is highly recommended to start. At 95% readiness with low ACWR."
+  }
+}
+```
 
-1. **Next Match Card**: (Keep this as you have it—Live/Countdown).
-2. **Match Readiness Score (Hero Element)**: This should be the core, most prominent metric on the dashboard. Use a large ring/donut chart showing the Squad Average Readiness (e.g., 85%).
-3. **Injury Risk / Alerts (Secondary Element)**: Right below the Readiness score, show the list of the **Top 3 players flagged with HIGH risk**.
-4. **Dev Tools**: Keep the "Simulate FT Update" button visible here when Demo Mode is ON.
-
-### Tab 2: Check-In (The "High-Wow" AI Hub)
-*You must build this completely new tab. This is where we show off the multimodal AI.*
-
-1. **Section A: Selfie Check-in (Presage)**
-   - UI: A camera viewfinder component with a "Take 10s Selfie" button.
-   - Action: Captures vitals/readiness signals. *(Note: For the demo, you can trigger a 3-second 'Analyzing...' spinner that resolves to a mock `+5% Readiness` boost overlay if Roshini hasn't wired the endpoint).*
-2. **Section B: Movement Screen**
-   - UI: A "Record Squat/Hinge" button.
-   - Action: This uploads a video file to Roshini's backend endpoint.
-   - AI Response: Roshini's backend will call my `analyze_movement()` script and return JSON. You must overlay the `mechanical_risk_band` (LOW/MED/HIGH) and the `coaching_cues` directly over the video thumbnail once complete.
-
-### Tab 3: Squad (Grid View) & Player Detail
-Your existing Squad Grid is fine. When a coach clicks a player, they enter the **Player Detail Screen**.
-
-*The Player Detail screen must group the AI features clearly:*
-1. **Header**: Risk Trend Chart + "Why Flagged" (Drivers list).
-2. **"Generate Coach Plan" Button**: 
-   - When tapped, trigger `POST /players/{id}/action_plan`.
-   - Show a sleek **shimmer loading state**.
-   - Upon success, render a stylish dropdown or card containing the 4-part JSON response (`Summary`, `Why`, `Recommendations`, `Caution`).
-3. **"Similar Historical Cases" Scroll**: 
-   - A horizontal scrolling list of cases returned by my Actian VectorAI similarity search.
+**Tested & verified**: The engine correctly benches low-readiness players (e.g., Valverde at 65% and Modric at 60% were benched). It also adapts formation to opponent context. Has a deterministic fallback if Gemini is slow — your app will always get valid JSON.
 
 ---
 
-## 3. Data Contracts
+### ✅ Touchpoint 2: Top Drivers & Action Plan → `action_plan.py`
+**Your file:** `player_model.dart` (topDrivers) + Player Detail Screen
 
-Roshini and I have formalized the exact JSON structures in `contracts/api_contract.md`. **Please refer to this file in the backend repo for all final payload shapes.**
+**Endpoint (Roshini wires this):** `POST /players/{id}/action_plan`
 
-For your action items:
-- The `POST /action_plan` endpoint returns the keys: `{"summary", "why": [str], "recommendations": [str], "caution", "generated_at"}`. 
-- *Note the plural `recommendations` — your Flutter model expects this, and the AI layer is now configured to provide it.*
+**What your app receives:**
+```json
+{
+  "summary": "Vinicius Jr presents with elevated risk indicators.",
+  "why": [
+    "Sprint distance +25% vs baseline.",
+    "Low sleep quality reported.",
+    "Risk score at 85, readiness at 35."
+  ],
+  "recommendations": [
+    "Limit Match Day -2 drills.",
+    "Reduce high-speed running by 15-20%.",
+    "Implement sleep hygiene protocols."
+  ],
+  "caution": "Monitor hamstring integrity daily.",
+  "generated_at": "2026-02-21T10:00:00Z"
+}
+```
+
+**Note:** The `why` array IS your `topDrivers`. Roshini maps the `why` values into the `top_drivers` field on the Player object for the home squad grid, and the full JSON is shown when the coach taps "Generate Coach Plan" on the Player Detail screen.
 
 ---
 
-## 4. Next Steps for You (Prithvi)
+### ✅ Touchpoint 3: Match Reports → `match_report.py`
+**Your file:** Reports tab / `MatchReportModel`
 
-1. **Build the `Check-In` Tab** (Selfie & Movement UI).
-2. **Re-order the Home Dashboard** (Readiness > Risk).
-3. **Mock the "Loading" states** for the AI generation buttons (Coach Plan, Movement Screen) so they feel premium while Gemini is thinking.
-4. **Point your BASE_URL** to Roshini's deployment once she provides the Vultr IP.
+**What your app receives:**
+```json
+{
+  "match_summary": "Real Madrid secured a 2-1 victory in a very high-intensity fixture.",
+  "squad_load_assessment": "High physical toll on the squad, with elevated loads.",
+  "critical_flags": ["Valverde played 90 min, ACWR approaching 1.5."]
+}
+```
 
-Let us know when these UI shells are ready so we can run the end-to-end integration test! 🚀
+**Note:** The `match_summary` is your "Key Takeaway" / `headline`. Roshini maps this into the report list objects.
+
+---
+
+## 2. NEW Features You Need to Build UI For
+
+### 🆕 Feature A: Presage Selfie Check-In → `presage_readiness.py`
+**Where it goes:** Your **Check-In tab** (new tab on bottom nav)
+
+**UI Flow:**
+1. Player opens the Check-In tab → Camera viewfinder using **Presage SmartSpectra SDK** (iOS).
+2. Player takes a 10s selfie → SDK extracts vitals.
+3. Your app sends the vitals to the backend.
+
+**What your app sends:**
+```json
+{
+  "player_id": "uuid",
+  "vitals": {
+    "pulse_rate": 74,
+    "hrv_ms": 42,
+    "breathing_rate": 18,
+    "confidence": 0.88
+  }
+}
+```
+
+**What your app receives:**
+```json
+{
+  "readiness_delta": -13,
+  "readiness_flag": "ALERT",
+  "contributing_factors": [
+    "Resting HR elevated +20bpm above baseline.",
+    "HRV suppressed at 52% of baseline.",
+    "High ACWR combined with recent 90-min match."
+  ],
+  "recommendation": "Reduce training load by 20% and re-assess before match day."
+}
+```
+
+**UI Display:** Show the `readiness_flag` as a colored badge (GOOD=green, CONCERN=amber, ALERT=red). Show `readiness_delta` as "+X" or "X" readiness adjustment. Show `contributing_factors` as a bullet list. Show `recommendation` as a highlighted coaching cue.
+
+---
+
+### 🆕 Feature B: Movement Screen → `movement_analysis.py`
+**Where it goes:** Your **Check-In tab** (second section, below Selfie)
+
+**UI Flow:**
+1. Coach taps "Record Squat/Hinge" → Camera records 10s video.
+2. Video uploads to backend → Gemini `gemini-2.5-pro` analyzes biomechanics.
+3. Results overlay on the video thumbnail.
+
+**What your app sends:** Multipart form upload with the video file + `player_id` + `position`.
+
+**What your app receives:**
+```json
+{
+  "mechanical_risk_band": "HIGH",
+  "flags": ["Knee Valgus", "Forward Trunk Lean"],
+  "coaching_cues": [
+    "Drive knees out in line with 2nd toe on landing.",
+    "Cue upright chest during deceleration practice."
+  ],
+  "confidence": 0.85
+}
+```
+
+---
+
+### 🆕 Feature C: Similar Historical Cases → `vector_db.py`
+**Where it goes:** Player Detail screen (horizontal scroll section)
+
+**What your app receives:**
+```json
+[
+  {
+    "player_id": "uuid",
+    "player_name": "Hazard",
+    "week_label": "Wk 12 (2023)",
+    "similarity_score": 0.92,
+    "summary": "Similar sprint spike led to hamstring overload.",
+    "outcome": "Grade 1 hamstring strain in the 68th minute."
+  }
+]
+```
+
+---
+
+## 3. Bottom Navigation Update
+
+Based on our AI features, your bottom nav should be:
+1. **Home** - Dashboard (Readiness Ring → Risk Alerts → Suggested XI pitch map)
+2. **Check-In** - Presage Selfie + Movement Screen
+3. **Reports** - Match reports list
+4. **Settings** - Demo mode toggle, base URL config, logout
+
+---
+
+## 4. Loading States (Critical for Demo)
+
+For every AI button, implement a **shimmer/loading** state because Gemini takes 2-5 seconds:
+- "Generate Coach Plan" → Shimmer card → Drops down JSON result
+- "Generate Suggested XI" → Pitch map skeleton shimmer → Players appear
+- Presage Check-In → "Analyzing vitals..." spinner → Flag + delta overlay
+- Movement Screen → "Analyzing movement..." progress bar → Risk band overlay
+
+---
+
+## 5. Quick Action Checklist
+
+- [ ] Build the **Check-In tab** (Presage Selfie + Movement Screen).
+- [ ] Wire **Suggested XI** to the new endpoint — replace hardcoded formation logic.
+- [ ] Wire **"Generate Coach Plan"** button to `POST /players/{id}/action_plan`.
+- [ ] Map `why` array to `topDrivers` on Player cards.
+- [ ] Wire **Similar Cases** horizontal scroll to `GET /players/{id}/similar_cases`.
+- [ ] Map `match_summary` to `headline` in Match Report list items.
+- [ ] Add shimmer loading states for all AI-powered buttons.
+- [ ] Re-order Home dashboard: **Readiness Ring** (hero) → Risk Alerts → Suggested XI.
+
+Pull from `main` to get everything! 🚀
