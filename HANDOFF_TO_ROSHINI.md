@@ -21,6 +21,8 @@ All AI modules are implemented, tested with **live Gemini API calls**, and commi
 | `backend/ai/action_plan.py` | `generate_action_plan()` → strict JSON |
 | `backend/ai/match_report.py` | `generate_match_report()` → strict JSON |
 | `backend/ai/movement_analysis.py` | `analyze_movement(video_path)` → strict JSON |
+| `backend/ai/suggested_xi.py` | `generate_suggested_xi()` → Tactical line-up & formation |
+| `backend/ai/presage_readiness.py` | `process_presage_checkin()` → Vitals fusion logic |
 | `backend/prompts/*` | All prompt templates (system + user) |
 
 ---
@@ -116,6 +118,43 @@ result = analyze_movement(video_path="/path/to/temp_uploads/clip.mp4")
 
 **Output keys:** `mechanical_risk_band`, `flags`, `coaching_cues`, `confidence`  
 *Falls back to `{"mechanical_risk_band": "MED", "confidence": 0.0}` if video processing fails.*
+
+---
+
+### Suggested XI (for `POST /workspaces/{id}/suggested-xi`)
+```python
+from backend.ai.suggested_xi import generate_suggested_xi
+
+result = generate_suggested_xi(
+    opponent="Bayern Munich",
+    match_context="Away, UCL Semi-Final",
+    available_squad=[
+        {"id": "p1", "name": "Vini Jr", "position": "FW", "readiness": 95, "form": "Excellent"}
+    ]
+)
+```
+**Output keys:** `best_formation`, `tactical_analysis`, `starting_xi_ids`, `bench_ids`, `player_rationales`
+
+---
+
+### Presage Vitals (for `POST /players/{id}/presage_checkin`)
+```python
+from backend.ai.presage_readiness import process_presage_checkin
+
+result = process_presage_checkin(
+    player_context={
+        "name": "Jude Bellingham", 
+        "risk_score": 72, 
+        "baselines": {"resting_pulse_rate": 58, "hrv_ms": 72}
+    },
+    vitals={
+        "pulse_rate": 78, "hrv_ms": 38, "breathing_rate": 19,
+        "stress_level": "High", "focus": "Low", "valence": "Negative", "confidence": 0.88
+    }
+)
+```
+**Output keys:** `readiness_delta`, `readiness_flag`, `emotional_state`, `contributing_factors`, `recommendation`
+
 
 ---
 

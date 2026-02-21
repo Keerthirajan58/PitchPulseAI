@@ -45,6 +45,11 @@ def _compute_heuristic_delta(vitals: Dict[str, Any], baselines: Dict[str, Any]) 
     breathing = vitals.get("breathing_rate", 0)
     confidence = vitals.get("confidence", 0.0)
 
+    # Emotional metrics (optional for backward compatibility)
+    stress_level = vitals.get("stress_level", "Normal")
+    focus = vitals.get("focus", "Normal")
+    valence = vitals.get("valence", "Neutral")
+
     baseline_pulse = baselines.get("resting_pulse_rate", DEFAULT_BASELINES["resting_pulse_rate"])
     baseline_hrv = baselines.get("hrv_ms", DEFAULT_BASELINES["hrv_ms"])
     baseline_breathing = baselines.get("breathing_rate", DEFAULT_BASELINES["breathing_rate"])
@@ -88,6 +93,19 @@ def _compute_heuristic_delta(vitals: Dict[str, Any], baselines: Dict[str, Any]) 
             flag = "CONCERN"
         factors.append(f"Breathing rate elevated at {breathing} breaths/min (resting expected ~{baseline_breathing})")
 
+    # ── Emotional/Facial Analysis ──
+    if stress_level.lower() == "high":
+        delta -= 4
+        if flag == "GOOD":
+            flag = "CONCERN"
+        factors.append("High psychological stress indicators detected in facial scan.")
+    if valence.lower() == "negative":
+        delta -= 2
+        factors.append("Negative emotional valence detected, potentially indicating fatigue or mood disturbance.")
+    if focus.lower() == "high":
+        delta += 2
+        factors.append("High mental focus detected, suggesting good cognitive readiness.")
+
     # ── Confidence Check ──
     if confidence < 0.5:
         if flag == "GOOD":
@@ -103,6 +121,7 @@ def _compute_heuristic_delta(vitals: Dict[str, Any], baselines: Dict[str, Any]) 
     return {
         "readiness_delta": round(delta, 1),
         "readiness_flag": flag,
+        "emotional_state": "Stressed" if stress_level.lower() == "high" else "Optimal",
         "contributing_factors": factors[:3],  # Max 3 factors
         "recommendation": ""  # Will be filled by Gemini
     }
@@ -141,6 +160,9 @@ def process_presage_checkin(player_context: Dict[str, Any], vitals: Dict[str, An
                 "pulse_rate": 74,
                 "hrv_ms": 42,
                 "breathing_rate": 18,
+                "stress_level": "High",
+                "focus": "Low",
+                "valence": "Negative",
                 "confidence": 0.88
             }
 
@@ -148,6 +170,7 @@ def process_presage_checkin(player_context: Dict[str, Any], vitals: Dict[str, An
         dict: {
             "readiness_delta": float (-15 to +10),
             "readiness_flag": "GOOD" | "CONCERN" | "ALERT",
+            "emotional_state": "Optimal" | "Stressed" | "Lethargic" | "Focused",
             "contributing_factors": [str, str, str],
             "recommendation": str
         }
@@ -173,6 +196,7 @@ def process_presage_checkin(player_context: Dict[str, Any], vitals: Dict[str, An
         "heuristic_assessment": {
             "readiness_delta": heuristic["readiness_delta"],
             "readiness_flag": heuristic["readiness_flag"],
+            "emotional_state": heuristic["emotional_state"],
             "contributing_factors": heuristic["contributing_factors"],
         }
     }
@@ -184,7 +208,7 @@ def process_presage_checkin(player_context: Dict[str, Any], vitals: Dict[str, An
         result = generate_json(system_prompt=system_prompt, user_prompt=user_prompt)
 
         # Validate required keys exist in Gemini response
-        required_keys = {"readiness_delta", "readiness_flag", "contributing_factors", "recommendation"}
+        required_keys = {"readiness_delta", "readiness_flag", "emotional_state", "contributing_factors", "recommendation"}
         if not required_keys.issubset(result.keys()):
             logger.warning("Gemini response missing keys, falling back to heuristic.")
             raise ValueError("Incomplete Gemini response")

@@ -109,6 +109,9 @@ Hey Prithvi! I reviewed your handoff — great work on the premium UI overhaul. 
     "pulse_rate": 74,
     "hrv_ms": 42,
     "breathing_rate": 18,
+    "stress_level": "High",
+    "focus": "Low",
+    "valence": "Negative",
     "confidence": 0.88
   }
 }
@@ -117,18 +120,19 @@ Hey Prithvi! I reviewed your handoff — great work on the premium UI overhaul. 
 **What your app receives:**
 ```json
 {
-  "readiness_delta": -13,
+  "readiness_delta": -17,
   "readiness_flag": "ALERT",
+  "emotional_state": "Stressed",
   "contributing_factors": [
     "Resting HR elevated +20bpm above baseline.",
     "HRV suppressed at 52% of baseline.",
-    "High ACWR combined with recent 90-min match."
+    "High psychological stress indicators detected in facial scan."
   ],
-  "recommendation": "Reduce training load by 20% and re-assess before match day."
+  "recommendation": "Reduce training load by 20% and prioritize mental recovery."
 }
 ```
 
-**UI Display:** Show the `readiness_flag` as a colored badge (GOOD=green, CONCERN=amber, ALERT=red). Show `readiness_delta` as "+X" or "X" readiness adjustment. Show `contributing_factors` as a bullet list. Show `recommendation` as a highlighted coaching cue.
+**UI Display:** Show the `readiness_flag` as a colored badge (GOOD=green, CONCERN=amber, ALERT=red). Show `emotional_state` as a secondary tag. Show `readiness_delta` as "+X" or "X". Show `contributing_factors` as a bullet list. Show `recommendation` as a highlighted coaching cue.
 
 ---
 

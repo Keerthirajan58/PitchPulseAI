@@ -113,18 +113,21 @@ def test_presage_checkin():
         "baselines": {"resting_pulse_rate": 58, "hrv_ms": 72, "breathing_rate": 13}
     }
 
-    # Scenario: Fatigued player — elevated HR, suppressed HRV
+    # Scenario: Fatigued player — elevated HR, suppressed HRV, high emotional stress
     vitals = {
         "pulse_rate": 78,
         "hrv_ms": 38,
         "breathing_rate": 19,
+        "stress_level": "High",
+        "focus": "Low",
+        "valence": "Negative",
         "confidence": 0.88
     }
 
     result = process_presage_checkin(player_context, vitals)
     logger.info(f"Presage Check-In Result:\n{json.dumps(result, indent=2)}")
 
-    for key in ["readiness_delta", "readiness_flag", "contributing_factors", "recommendation"]:
+    for key in ["readiness_delta", "readiness_flag", "emotional_state", "contributing_factors", "recommendation"]:
         assert key in result, f"Missing key: {key}"
     assert result["readiness_flag"] in ["GOOD", "CONCERN", "ALERT"], f"Invalid flag: {result['readiness_flag']}"
     assert -15 <= result["readiness_delta"] <= 10, f"Delta out of range: {result['readiness_delta']}"
