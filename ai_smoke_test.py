@@ -182,13 +182,13 @@ def test_vector_db():
     results = search_similar_cases(query, k=3)
     logger.info(f"Similar Cases Found: {len(results)}")
     for r in results:
-        logger.info(f"  → {r['player_name']} (score: {r['similarity_score']}) — {r['summary'][:80]}...")
+        logger.info(f"  → {r['player_name']} (score: {r['similarity_score']}) — {r['context'][:80]}...")
 
     assert len(results) > 0, "No similar cases returned"
 
-    # Validate result format matches Prithvi's Flutter model
+    # Validate result format matches Roshini's API contract
     for r in results:
-        for key in ["player_id", "player_name", "week_label", "similarity_score", "summary", "outcome"]:
+        for key in ["player_name", "week_date", "similarity_score", "context", "action_taken"]:
             assert key in r, f"Missing key in result: {key}"
 
     logger.info("✅ Vector DB Test: PASSED\n")

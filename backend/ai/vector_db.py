@@ -243,14 +243,13 @@ def search_similar_cases(query_text: str, k: int = 5,
         source_filter: Optional filter (e.g., "PitchPulse_CaseStudy").
 
     Returns:
-        list[dict]: Each dict has:
+        list[dict]: Each dict matches Roshini's GET /players/{id}/similar_cases contract:
             {
-                "player_id": str,
                 "player_name": str,
-                "week_label": str,
+                "week_date": str,
                 "similarity_score": float,
-                "summary": str,
-                "outcome": str
+                "context": str,
+                "action_taken": str
             }
     """
     client = _get_client()
@@ -261,7 +260,7 @@ def search_similar_cases(query_text: str, k: int = 5,
     else:
         raw_results = client.search(query_vector=query_vec, top_k=k)
 
-    # Format results for the Flutter app
+    # Format results to match Roshini's API contract
     formatted = []
     for r in raw_results:
         payload = r.get("payload", {}) if isinstance(r, dict) else getattr(r, "payload", {})
@@ -272,12 +271,11 @@ def search_similar_cases(query_text: str, k: int = 5,
             continue
 
         formatted.append({
-            "player_id": payload.get("player_id", ""),
             "player_name": payload.get("player_name", payload.get("topic", "Historical Case")),
-            "week_label": payload.get("week", payload.get("topic", "")),
+            "week_date": payload.get("week", payload.get("topic", "")),
             "similarity_score": round(score, 3),
-            "summary": payload.get("text", "")[:200],
-            "outcome": payload.get("outcome", payload.get("intervention", "")),
+            "context": payload.get("text", "")[:200],
+            "action_taken": payload.get("outcome", payload.get("intervention", "")),
         })
 
     return formatted[:k]

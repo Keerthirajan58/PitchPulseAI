@@ -1,205 +1,192 @@
-# PitchPulse API Contract
+# PitchPulse API Contract (Unified)
 
-*Version:* 1.0  
-*Purpose:* Provide a single source of truth for the JSON payload shapes exchanged between the Flutter App (Prithvi), the FastAPI Backend (Roshini), and the AI Layer (Keerthi).
-
----
-
-## 1. Authentication
-**All client requests** must include the Firebase ID token in the header:
-```http
-Authorization: Bearer <firebase_id_token>
-```
-The Backend (`FastAPI`) verifies this token and extracts the `uid` to determine roles and workspace access.
+*Version:* 2.0 (Merged — Roshini's Backend + Keerthi's AI Endpoints)  
+*Purpose:* Single source of truth for JSON shapes across Flutter (Prithvi), FastAPI (Roshini), and AI Layer (Keerthi).
 
 ---
 
-## 2. Core Entities
+## Core Structures
 
-### Player Object
+### Workspace
 ```json
 {
-  "id": "uuid_string",
-  "name": "Vinicius Jr",
-  "position": "Winger",
-  "nationality": "Brazil",
-  "jersey_number": 7,
-  "photo_url": "https://url.com/photo.jpg",
-  "age": 24,
-  "risk_score": 85,
-  "risk_band": "HIGH", 
-  "readiness_score": 35,
-  "readiness_band": "LOW",
-  "top_drivers": ["Sprint distance +25% vs baseline", "Low sleep quality"],
-  "risk_sparkline": [40, 42, 45, 60, 75, 85]
+  "id": "uuid",
+  "provider_team_id": 123,
+  "team_name": "Real Madrid",
+  "status": "approved",
+  "created_at": "2023-10-27T10:00:00Z"
 }
 ```
-*Note on Bands:* 
-- `LOW`: 0-35
-- `MED`: 36-65
-- `HIGH`: 66-100
 
-### Fixture Object
+### Player
 ```json
 {
-  "id": "uuid_string",
-  "home_team": "Real Madrid",
-  "away_team": "Barcelona",
-  "home_logo_url": "https://url.com/rm.png",
-  "away_logo_url": "https://url.com/barca.png",
-  "kickoff": "2026-03-15T20:00:00Z",
-  "status": "NS", 
-  "home_score": null,
-  "away_score": null,
-  "venue": "Santiago Bernabéu",
-  "competition": "La Liga"
+  "id": "uuid",
+  "name": "Jude Bellingham",
+  "position": "Midfielder",
+  "jersey": 5
 }
 ```
-*Status Enums:* `"NS"` (Not Started), `"LIVE"`, `"FT"` (Full Time)
+
+### Fixture
+```json
+{
+  "id": "uuid",
+  "provider_fixture_id": 456,
+  "kickoff": "2023-10-28T14:00:00Z",
+  "opponent_name": "Barcelona",
+  "home_away": "away",
+  "status": "FT",
+  "score_home": 1,
+  "score_away": 2
+}
+```
 
 ---
 
-## 3. Endpoints (UI to Backend)
+## Public Routes (Requires Bearer Token)
 
 ### `GET /me`
-Resolves the current user's profile and routing details.
+Returns current user profile and workspaces.  
 **Response:**
 ```json
 {
-  "uid": "firebase_uid",
-  "email": "user@pitchpulse.io",
-  "role": "admin", 
-  "workspace_ids": ["workspace_uuid_1"],
-  "display_name": "Coach Carlo"
+  "user": {
+    "id": "uuid",
+    "email": "coach@madrid.com",
+    "role": "manager"
+  },
+  "workspaces": [ /* Workspace objects */ ]
 }
 ```
-*(Role is either `"admin"` or `"manager"`)*
 
-### `GET /workspaces/{workspace_id}/home`
-Populates the main Manager dashboard.
+### `GET /clubs/search?q={query}`
 **Response:**
 ```json
 {
-  "next_fixture": { /* Fixture Object */ },
-  "squad": [
-    { /* Player Object 1 */ },
-    { /* Player Object 2 */ }
+  "teams": [
+    {
+      "provider_team_id": 123,
+      "name": "Real Madrid",
+      "logo_url": "https://..."
+    }
   ]
 }
 ```
 
-### `GET /players/{player_id}/detail?weeks=6`
-Returns the historical load data for charting.
+### `POST /workspaces/request_access`
+**Body:** `{"provider_team_id": 123}`  
+**Response:** Workspace object (status: `"pending"`)
+
+### `GET /workspaces/{id}/home`
 **Response:**
 ```json
 {
-  "player": { /* Player Object */ },
-  "weekly_load": [
+  "workspace": { /* Workspace object */ },
+  "next_fixture": { /* Fixture object OR null */ },
+  "recent_fixtures": [ /* Array of Fixtures */ ],
+  "squad": [
     {
-      "week_label": "Wk 42",
-      "week_start": "2026-02-09T00:00:00Z",
-      "acute_load": 1200,
-      "chronic_load": 1100,
-      "risk_score": 45
+      "player": { /* Player Object */ },
+      "readiness_score": 85,
+      "risk_score": 20,
+      "risk_band": "LOW",
+      "top_drivers": ["Optimal ACWR", "Normal match load"]
     }
-  ],
-  "risk_drivers": [
+  ]
+}
+```
+
+### `GET /players/{id}/detail?weeks=6`
+**Response:**
+```json
+{
+  "player": { /* Player object */ },
+  "current_status": {
+    "readiness_score": 85,
+    "risk_score": 20,
+    "risk_band": "LOW",
+    "acute_load": 400,
+    "chronic_load": 350,
+    "acwr": 1.14
+  },
+  "weekly_history": [
     {
-      "label": "Acute:Chronic Workload Ratio",
-      "value": "1.6",
-      "threshold": "1.5",
-      "trend": "UP",
-      "severity": "HIGH"
+      "week_start": "2023-10-20T00:00:00Z",
+      "risk_score": 15,
+      "readiness_score": 90,
+      "acute_load": 300,
+      "acwr": 0.95
     }
+  ]
+}
+```
+
+### `GET /players/{id}/why`
+**Response:**
+```json
+{
+  "drivers": [
+    {"factor": "Acute Load Spike", "value": "600", "threshold": "500", "impact": "negative"},
+    {"factor": "Days Since Match", "value": "2", "threshold": "3", "impact": "negative"}
   ]
 }
 ```
 
 ---
 
-## 4. AI Feature Endpoints (Backend to AI / UI)
+## AI Feature Endpoints
 
-### `POST /players/{player_id}/action_plan`
-Generates a deterministic plan for the coach. 
-*Backend logic:* Fetch similar cases from Vector DB -> call `backend/ai/action_plan.py` -> return response.
-**Response (Generated by Keerthi's AI Layer):**
-```json
-{
-  "summary": "Vinicius Jr presents with elevated mechanical risk indicators.",
-  "why": [
-    "Sprint distance +25% vs baseline, exceeding club protocol."
-  ],
-  "recommendations": [
-    "Limit Match Day -2 technical drills."
-  ],
-  "caution": "Closely monitor hamstring integrity.",
-  "generated_at": "2026-02-21T10:00:00Z"
-}
-```
-
-### `GET /players/{player_id}/similar_cases?k=5`
-Retrieves similar historical injuries based on vector similarity.
+### `GET /players/{id}/similar_cases?k=5`
+Retrieves similar historical player-weeks from Actian VectorAI DB.  
 **Response:**
 ```json
-[
-  {
-    "player_id": "uuid",
-    "player_name": "Hazard",
-    "week_label": "Wk 12 (2023)",
-    "similarity_score": 0.92,
-    "summary": "Similar 25% sprint spike led to load accumulation.",
-    "outcome": "Grade 1 hamstring strain sustained in the 68th minute."
-  }
-]
-```
-
-### `GET /workspaces/{workspace_id}/reports`
-List of all match reports generated post-match.
-**Response:**
-```json
-[
-  {
-    "fixture_id": "uuid",
-    "opponent": "Barcelona",
-    "match_date": "2026-02-20T20:00:00Z",
-    "result": "W",
-    "goals_for": 2,
-    "goals_against": 1,
-    "competition": "La Liga",
-    "headline": "Real Madrid secured a 2-1 victory in a very high-intensity fixture." 
-  }
-]
-```
-*(Backend note: The `headline` field here should be populated from the `match_summary` key generated by Keerthi's `generate_match_report()` AI function.)*
-
-### `POST /workspaces/{workspace_id}/suggested-xi`
-Generates an AI-recommended formation and Starting XI.
-**Request:**
-```json
 {
-  "opponent": "Bayern Munich",
-  "match_context": "Away, Champions League Semi-Final",
-  "available_squad": [
-    { "id": "uuid", "name": "Vinícius Jr", "position": "FW", "readiness": 95, "form": "Excellent" }
+  "cases": [
+    {
+      "player_name": "Vinicius Jr",
+      "week_date": "2023-09-15T00:00:00Z",
+      "similarity_score": 0.92,
+      "context": "High ACWR (1.6) combined with 3 matches in 7 days.",
+      "action_taken": "Rested for 1 match, load reduced by 30%."
+    }
   ]
 }
 ```
-**Response:**
+
+### `POST /players/{id}/action_plan`
+Calls Gemini with similar cases + playbook docs via RAG.  
+**Response (Strict JSON from AI Layer):**
 ```json
 {
-  "best_formation": "4-3-3",
-  "tactical_analysis": "AI Strategy: 4-3-3 selected to stretch Bayern's high line...",
-  "starting_xi_ids": ["p1", "p2", "..."],
-  "bench_ids": ["p12", "..."],
-  "player_rationales": {
-    "p1": "Vini is highly recommended to start. At 95% readiness..."
-  }
+  "summary": "Player is at high risk due to acute load spike.",
+  "why": [
+    "ACWR is 1.6 (Dangerous Zone)",
+    "Played 270 minutes in 7 days"
+  ],
+  "recommendations": [
+    "Rest for the upcoming cup fixture.",
+    "Limit training to recovery protocols only."
+  ],
+  "caution": "Do not clear for high-speed running drills until day 4."
 }
 ```
 
-### `POST /players/{player_id}/presage_checkin`
-Submits selfie-captured vitals for readiness adjustment.
-**Request:**
+### `POST /players/{id}/movement_analysis`
+Accepts a video upload (`multipart/form-data` with `video` field).  
+**Response (Strict JSON from AI Layer):**
+```json
+{
+  "mechanical_risk_band": "MED",
+  "flags": ["Slight knee valgus on descent"],
+  "coaching_cues": ["Drive knees out over toes"],
+  "confidence": 0.85
+}
+```
+
+### `POST /players/{id}/presage_checkin`
+Submits selfie-captured vitals (physical + emotional) for readiness adjustment.  
+**Request Body:**
 ```json
 {
   "vitals": {
@@ -213,32 +200,53 @@ Submits selfie-captured vitals for readiness adjustment.
   }
 }
 ```
-**Response:**
+**Response (Strict JSON from AI Layer):**
 ```json
 {
-  "readiness_delta": -17,
+  "readiness_delta": -15,
   "readiness_flag": "ALERT",
   "emotional_state": "Stressed",
   "contributing_factors": [
     "Resting HR elevated +20bpm above baseline.",
     "HRV suppressed at 52% of baseline.",
-    "High psychological stress indicators detected in facial scan.",
-    "Negative emotional valence detected..."
+    "High psychological stress detected in facial scan."
   ],
-  "recommendation": "Reduce training load by 20% and prioritize mental recovery."
+  "recommendation": "Reduce training load and prioritize mental recovery."
 }
 ```
 
-### `POST /players/{player_id}/movement_analysis`
-Submits a video for biomechanical risk analysis.
-**Request:** Multipart form data with `video` file.
-**Response:**
+### `POST /workspaces/{id}/suggested-xi`
+Generates an AI-recommended tactical formation and Starting XI.  
+**Request Body:**
 ```json
 {
-  "mechanical_risk_band": "HIGH",
-  "flags": ["Knee Valgus", "Forward Trunk Lean"],
-  "coaching_cues": ["Drive knees out...", "Cue upright chest..."],
-  "confidence": 0.85
+  "opponent": "Bayern Munich",
+  "match_context": "Away, Champions League Semi-Final",
+  "available_squad": [
+    {"id": "uuid", "name": "Vinícius Jr", "position": "FW", "readiness": 95, "form": "Excellent"},
+    {"id": "uuid", "name": "Bellingham", "position": "MID", "readiness": 88, "form": "Good"}
+  ]
+}
+```
+**Response (Strict JSON from AI Layer):**
+```json
+{
+  "best_formation": "4-3-3",
+  "tactical_analysis": "4-3-3 selected to stretch Bayern's high line with pace on both flanks.",
+  "starting_xi_ids": ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11"],
+  "bench_ids": ["p12", "p13", "p14", "p15"],
+  "player_rationales": {
+    "p1": "Vini is highly recommended to start. At 95% readiness with low ACWR."
+  }
 }
 ```
 
+---
+
+## Internal / Sync Routes (Can use `?use_demo=true`)
+
+### `POST /sync/workspace/{id}/initial`
+**Response:** `{"status": "success", "players_synced": 25, "fixtures_synced": 5}`
+
+### `POST /sync/fixtures/poll_once`
+**Response:** `{"status": "success", "fixtures_processed": 1, "stats_ingested": 14}`
