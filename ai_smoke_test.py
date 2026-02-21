@@ -10,6 +10,7 @@ from backend.ai.action_plan import generate_action_plan
 from backend.ai.match_report import generate_match_report
 from backend.ai.presage_readiness import process_presage_checkin
 from backend.ai.vector_db import seed_knowledge_base, upsert_player_week, search_similar_cases
+from backend.ai.suggested_xi import generate_suggested_xi
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -190,6 +191,44 @@ def test_vector_db():
     logger.info("✅ Vector DB Test: PASSED\n")
 
 
+def test_suggested_xi():
+    logger.info("=" * 60)
+    logger.info("TEST 6: Suggested XI (Tactical Lineup)")
+    logger.info("=" * 60)
+
+    squad = [
+        {"id": "p1",  "name": "Courtois",    "position": "GK",  "readiness": 92, "form": "Excellent"},
+        {"id": "p2",  "name": "Carvajal",    "position": "DEF", "readiness": 78, "form": "Good"},
+        {"id": "p3",  "name": "Militão",     "position": "DEF", "readiness": 85, "form": "Good"},
+        {"id": "p4",  "name": "Rüdiger",     "position": "DEF", "readiness": 88, "form": "Excellent"},
+        {"id": "p5",  "name": "Mendy",       "position": "DEF", "readiness": 70, "form": "Average"},
+        {"id": "p6",  "name": "Tchouaméni",  "position": "MID", "readiness": 82, "form": "Good"},
+        {"id": "p7",  "name": "Bellingham",  "position": "MID", "readiness": 91, "form": "Excellent"},
+        {"id": "p8",  "name": "Valverde",    "position": "MID", "readiness": 65, "form": "Average"},
+        {"id": "p9",  "name": "Vinícius Jr", "position": "FW",  "readiness": 95, "form": "Excellent"},
+        {"id": "p10", "name": "Mbappé",      "position": "FW",  "readiness": 90, "form": "Good"},
+        {"id": "p11", "name": "Rodrygo",     "position": "FW",  "readiness": 84, "form": "Good"},
+        {"id": "p12", "name": "Modric",      "position": "MID", "readiness": 60, "form": "Average"},
+        {"id": "p13", "name": "Camavinga",   "position": "MID", "readiness": 88, "form": "Good"},
+        {"id": "p14", "name": "Nacho",       "position": "DEF", "readiness": 72, "form": "Average"},
+        {"id": "p15", "name": "Lunin",       "position": "GK",  "readiness": 80, "form": "Good"},
+    ]
+
+    result = generate_suggested_xi(
+        opponent="Bayern Munich",
+        match_context="Away, Champions League Semi-Final",
+        available_squad=squad
+    )
+    logger.info(f"Suggested XI Result:\n{json.dumps(result, indent=2)}")
+
+    # Validate structure
+    for key in ["best_formation", "tactical_analysis", "starting_xi_ids", "bench_ids", "player_rationales"]:
+        assert key in result, f"Missing key: {key}"
+    assert len(result["starting_xi_ids"]) == 11, f"Expected 11 starters, got {len(result['starting_xi_ids'])}"
+    assert result["best_formation"] in {"4-3-3", "4-4-2", "4-2-3-1", "3-5-2", "3-4-3", "5-3-2", "5-4-1"}
+    logger.info("✅ Suggested XI Test: PASSED\n")
+
+
 if __name__ == "__main__":
     if not os.environ.get("GEMINI_API_KEY"):
         logger.warning("No GEMINI_API_KEY found. Skipping real API calls.")
@@ -199,7 +238,8 @@ if __name__ == "__main__":
         test_match_report()
         test_presage_checkin()
         test_vector_db()
+        test_suggested_xi()
 
         logger.info("=" * 60)
-        logger.info("🏆 ALL 5 TESTS PASSED SUCCESSFULLY!")
+        logger.info("🏆 ALL 6 TESTS PASSED SUCCESSFULLY!")
         logger.info("=" * 60)
