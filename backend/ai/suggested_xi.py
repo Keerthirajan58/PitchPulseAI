@@ -68,11 +68,25 @@ def generate_suggested_xi(
             "player_rationales": {id: str, ...}
         }
     """
-    # Build the context payload matching Prithvi's expected input format
+    # Normalize squad: Prithvi may send `risk` instead of `form`.
+    # Convert risk score to a form string if form is absent.
+    def _risk_to_form(risk: int) -> str:
+        if risk <= 25: return "Excellent"
+        if risk <= 45: return "Good"
+        if risk <= 65: return "Average"
+        return "Poor"
+
+    normalized_squad = []
+    for p in available_squad:
+        player = dict(p)
+        if "form" not in player:
+            player["form"] = _risk_to_form(int(player.get("risk", 50)))
+        normalized_squad.append(player)
+
     context = {
         "opponent": opponent,
         "match_context": match_context,
-        "available_squad": available_squad
+        "available_squad": normalized_squad
     }
 
     try:
@@ -102,7 +116,7 @@ def generate_suggested_xi(
 
     except Exception as e:
         logger.error(f"Suggested XI generation failed: {e}")
-        return _fallback_xi(available_squad)
+        return _fallback_xi(normalized_squad)
 
 
 def _fallback_xi(squad: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -138,7 +152,7 @@ def _fallback_xi(squad: List[Dict[str, Any]]) -> Dict[str, Any]:
     for pid in xi:
         player = next((p for p in squad if p["id"] == pid), None)
         if player:
-            rationales[pid] = f"{player['name']} selected — Readiness: {player.get('readiness', '?')}%, Form: {player.get('form', 'N/A')}."
+            rationales[pid] = f"{player['name']} selected — Readiness: {player.get('readiness', '?')}%, Form: {player.get('form', 'N/A')}, Risk: {player.get('risk', 'N/A')}."
 
     return {
         "best_formation": "4-3-3",

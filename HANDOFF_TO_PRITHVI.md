@@ -22,8 +22,8 @@ Every AI feature you need is built, tested, and documented. Your JSON models wil
   "opponent": "Bayern Munich",
   "match_context": "Away, Champions League Semi-Final",
   "available_squad": [
-    {"id": "p1", "name": "Vinícius Jr", "position": "FW", "readiness": 95, "form": "Excellent"},
-    {"id": "p2", "name": "Bellingham", "position": "MID", "readiness": 88, "form": "Good"}
+    {"id": "p_1", "name": "Vinícius Jr", "position": "FW", "readiness": 95, "risk": 15},
+    {"id": "p_2", "name": "Bellingham", "position": "MID", "readiness": 88, "risk": 25}
   ]
 }
 ```
@@ -76,7 +76,7 @@ Every AI feature you need is built, tested, and documented. Your JSON models wil
 ## 4. Presage Selfie Check-In (Camera 1)
 
 **Where:** Check-In tab — top section  
-**Endpoint:** `POST /players/{id}/presage_checkin`
+⚠️ **Endpoint:** `POST /players/{id}/presage_checkin` ← use this EXACT URL, NOT `/checkin/selfie`
 
 **Send:**
 ```json
@@ -115,7 +115,7 @@ Every AI feature you need is built, tested, and documented. Your JSON models wil
 ## 5. Movement Screen (Camera 2)
 
 **Where:** Check-In tab — bottom section  
-**Endpoint:** `POST /players/{id}/movement_analysis`
+⚠️ **Endpoint:** `POST /players/{id}/movement_analysis` ← use this EXACT URL, NOT `/checkin/movement`
 
 **Send:** Multipart form data with `video` file + `position` field.
 

@@ -173,6 +173,7 @@ Calls Gemini with similar cases + playbook docs via RAG.
 ```
 
 ### `POST /players/{id}/movement_analysis`
+⚠️ **Correct URL** — NOT `/checkin/movement`. Roshini's live endpoint is `/movement_analysis`.  
 Accepts a video upload (`multipart/form-data` with `video` field).  
 **Response (Strict JSON from AI Layer):**
 ```json
@@ -185,6 +186,7 @@ Accepts a video upload (`multipart/form-data` with `video` field).
 ```
 
 ### `POST /players/{id}/presage_checkin`
+⚠️ **Correct URL** — NOT `/checkin/selfie`. Roshini's live endpoint is `/presage_checkin`.  
 Submits selfie-captured vitals (physical + emotional) for readiness adjustment.  
 **Request Body:**
 ```json
@@ -223,8 +225,8 @@ Generates an AI-recommended tactical formation and Starting XI.
   "opponent": "Bayern Munich",
   "match_context": "Away, Champions League Semi-Final",
   "available_squad": [
-    {"id": "uuid", "name": "Vinícius Jr", "position": "FW", "readiness": 95, "form": "Excellent"},
-    {"id": "uuid", "name": "Bellingham", "position": "MID", "readiness": 88, "form": "Good"}
+    {"id": "p_1", "name": "Vinícius Jr", "position": "FW", "readiness": 95, "risk": 15},
+    {"id": "p_2", "name": "Bellingham", "position": "MID", "readiness": 88, "risk": 25}
   ]
 }
 ```
