@@ -9,13 +9,11 @@
 
 | Module | Function | Wire To |
 |---|---|---|
-| `backend.ai.action_plan` | `generate_action_plan(player_ctx, cases, playbook)` | `POST /players/{id}/action_plan` |
+| `backend.ai.action_plan` | `generate_action_plan(player_ctx)` | `POST /players/{id}/action_plan` |
 | `backend.ai.match_report` | `generate_match_report(fixture, team_stats, player_stats)` | Post-match sync worker |
 | `backend.ai.movement_analysis` | `analyze_movement(video_path, position)` | `POST /players/{id}/movement_analysis` |
 | `backend.ai.presage_readiness` | `process_presage_checkin(player_ctx, vitals)` | **NEW:** `POST /players/{id}/presage_checkin` |
 | `backend.ai.suggested_xi` | `generate_suggested_xi(opponent, context, squad)` | **NEW:** `POST /workspaces/{id}/suggested-xi` |
-| `backend.ai.vector_db` | `seed_knowledge_base()`, `upsert_player_week()`, `search_similar_cases()` | Sync worker + `GET /players/{id}/similar_cases` |
-| `backend.ai.embeddings` | `embed_text()`, `create_player_week_document()` | Used internally by vector_db |
 
 ---
 
@@ -49,22 +47,6 @@ result = generate_suggested_xi(
 
 ---
 
-## 3. Vector DB Key Alignment
-
-I aligned my `search_similar_cases()` output to match YOUR `GET /players/{id}/similar_cases` contract exactly:
-
-| Your Contract Key | My Output Key | ✅ |
-|---|---|---|
-| `player_name` | `player_name` | Match |
-| `week_date` | `week_date` | Match |
-| `similarity_score` | `similarity_score` | Match |
-| `context` | `context` | Match |
-| `action_taken` | `action_taken` | Match |
-
-You can wrap my return value in `{"cases": results}` to match your response shape.
-
----
-
 ## 4. Vultr Deployment (for Prithvi)
 
 Prithvi needs your API accessible from his Flutter app — not on `localhost`. Deploy to Vultr:
@@ -87,7 +69,6 @@ Then share the Vultr IP with Prithvi so he can set it as his app's base URL.
 Ensure `.env` has:
 ```
 GEMINI_API_KEY=your_key_here
-VECTOR_DB_URL=localhost:50051    # leave blank for in-memory fallback
 ```
 
 ---

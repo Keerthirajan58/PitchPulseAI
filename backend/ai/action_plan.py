@@ -1,8 +1,7 @@
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 from .gemini_client import generate_json
-from .rag import compose_rag_context
 
 def get_action_plan_prompts() -> tuple[str, str]:
     """Retrieves the system and user prompts for action plan generation."""
@@ -20,23 +19,17 @@ def get_action_plan_prompts() -> tuple[str, str]:
          
     return system_prompt, user_prompt_template
 
-def generate_action_plan(player_context: Dict[str, Any], 
-                         retrieved_cases: List[Dict[str, Any]], 
-                         retrieved_playbook: List[Dict[str, Any]]) -> Dict[str, Any]:
+def generate_action_plan(player_context: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Generates a deterministic strict JSON action plan for a coach based on a player's latest
-    metrics and context retrieved from Actian VectorAI.
+    Generates a deterministic strict JSON action plan for a coach based on a player's latest metrics.
     """
-    # 1. Compose the context string
-    rag_context = compose_rag_context(player_context, retrieved_cases, retrieved_playbook)
-    
     # 2. Get prompts
     system_prompt, user_prompt_template = get_action_plan_prompts()
     
     # 3. Format the user prompt
-    user_prompt = user_prompt_template.format(context=rag_context)
+    context_str = json.dumps({"player_context": player_context}, indent=2)
+    user_prompt = user_prompt_template.format(context=context_str)
     
     # 4. Generate the structured JSON response
     # We use a lower temperature because these are actionable performance metrics
     return generate_json(system_prompt=system_prompt, user_prompt=user_prompt)
-

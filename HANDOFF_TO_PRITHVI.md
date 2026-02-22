@@ -131,29 +131,7 @@ Every AI feature you need is built, tested, and documented. Your JSON models wil
 
 ---
 
-## 6. Similar Cases
-
-**Where:** Player Detail screen (horizontal scroll)  
-**Endpoint:** `GET /players/{id}/similar_cases?k=5`
-
-**Receive:**
-```json
-{
-  "cases": [
-    {
-      "player_name": "Hazard",
-      "week_date": "2023-09-15T00:00:00Z",
-      "similarity_score": 0.92,
-      "context": "High ACWR (1.6) combined with 3 matches in 7 days.",
-      "action_taken": "Rested for 1 match, load reduced by 30%."
-    }
-  ]
-}
-```
-
----
-
-## 7. Loading States (Critical for Demo!)
+## 6. Loading States (Critical for Demo!)
 
 Every AI button needs a shimmer/loading state (Gemini takes 2-5 seconds):
 - **Generate Coach Plan** → Shimmer card → JSON result drops in
@@ -163,24 +141,23 @@ Every AI button needs a shimmer/loading state (Gemini takes 2-5 seconds):
 
 ---
 
-## 8. Base URL
+## 7. Base URL
 
-Ask Roshini for her **Vultr deployment IP**. Set your app's base URL to:
+Ask Roshini for her **ngrok or Vultr deployment IP**. Set your app's base URL to:
 ```
-http://<vultr-ip>:8000
+https://<ngrok-url>
 ```
 
-Interactive Swagger docs will be at `http://<vultr-ip>:8000/docs` — use this to test every endpoint from your browser before coding.
+Interactive Swagger docs will be at `https://<ngrok-url>/docs` — use this to test every endpoint from your browser before coding.
 
 ---
 
-## 9. Action Checklist
+## 8. Action Checklist
 
 - [ ] Wire Suggested XI → replace hardcoded formation logic
 - [ ] Wire "Generate Coach Plan" → `POST /players/{id}/action_plan`
 - [ ] Map `why` array → `topDrivers` on player cards
 - [ ] Build **Check-In tab**: Presage Selfie (Camera 1) + Movement (Camera 2)
-- [ ] Wire Similar Cases horizontal scroll → `GET /players/{id}/similar_cases`
 - [ ] Map `match_summary` → `headline` in Match Report list
 - [ ] Add shimmer loading states for all AI buttons
-- [ ] Set base URL to Roshini's Vultr IP
+- [ ] Set base URL to Roshini's public IP

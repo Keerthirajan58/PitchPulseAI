@@ -137,25 +137,8 @@ Returns current user profile and workspaces.
 
 ## AI Feature Endpoints
 
-### `GET /players/{id}/similar_cases?k=5`
-Retrieves similar historical player-weeks from Actian VectorAI DB.  
-**Response:**
-```json
-{
-  "cases": [
-    {
-      "player_name": "Vinicius Jr",
-      "week_date": "2023-09-15T00:00:00Z",
-      "similarity_score": 0.92,
-      "context": "High ACWR (1.6) combined with 3 matches in 7 days.",
-      "action_taken": "Rested for 1 match, load reduced by 30%."
-    }
-  ]
-}
-```
-
 ### `POST /players/{id}/action_plan`
-Calls Gemini with similar cases + playbook docs via RAG.  
+Calls Gemini to analyze current player metrics and return an actionable plan.  
 **Response (Strict JSON from AI Layer):**
 ```json
 {
